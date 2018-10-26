@@ -15,17 +15,12 @@ import (
 	"yuniot/core/extentions"
 	"yuniot/framework/influx"
 	"yuniot/models/others"
+	"sort"
 )
 var (
 	myConfig  = new(core.Config)
     MParms []xml.Motorparams
-	_model     *xml.DataGram
-	_values    []int
-	_time    time.Time
-	_unixTimeStr    string//当日日期
-	_normalPoints []*client.Point
-	_alarmPoints []*client.Point
-	_otherDiPoints []*client.Point
+
 	)
 func init() {
 	myConfig.InitConfig("./config/config.txt")
@@ -45,19 +40,30 @@ func main() {
 		if err!=nil || len(mqs)==0{
 			core.Logger.Panicln("获取队列列表出错:%s",err)
 		}
-		var remains int
-		for   _,q :=range  mqs {
-			go func(mq *xml.Messagequeue) {
-				rabbitmq.Read2(DataParse, mq.Username, mq.Pwd, mq.Host+":"+strconv.Itoa(mq.Port), mq.Routekey, remains,mq.Id)
-			}(&q)
-		}
-
+	for   _,q :=range  mqs {
+	//go func(mq *xml.Messagequeue) {
+	//var remains =0
+	if q.Id>2{
+		continue
+	}
+	 go rabbitmq.Read2(DataParse, q.Username, q.Pwd, q.Host+":"+strconv.Itoa(q.Port), q.Routekey, 0,q.Id)
+	//}(&q)
+	}
 	//阻塞
 	select {}
 }
 
 //数据解析
 func DataParse(bytes []byte,mqid int) (bool){
+	var (
+		_model     *xml.DataGram
+		_values    []int
+		_time    time.Time
+		_unixTimeStr    string//当日日期
+		_normalPoints []*client.Point
+		//_alarmPoints []*client.Point
+		//_otherDiPoints []*client.Point
+	)
 	t1 := time.Now() // get current time
 	mq,err :=xml.GetMessagequeue(mqid)
 	if err!=nil{
@@ -99,7 +105,25 @@ func DataParse(bytes []byte,mqid int) (bool){
 	_normalPoints=make([]*client.Point,0)
 	conn:=influx.ConnInflux()
 	//todo
-	motors,err:=xml.GetMotors()
+	collectDevice,err:=xml.GetCollectdeviceByIndex(_model.Collectdeviceindex)
+	if err!=nil{
+		core.Logger.Println("根据Index %s 获取相关采集设备err：%s",_model.Collectdeviceindex,err)
+		return false
+	}
+	//更新产线最新时间
+	//line,err:=xml.GetProductionlineById(collectDevice.ProductionlineId)
+	//if err!=nil{
+	//	core.Logger.Println("该采集设备%s不存在任何产线err：%s",collectDevice.Index,err)
+	//	return false
+	//}
+	//line.Time=globalTime
+	//res,err:=xml.UpdateProductionline(line)
+	//if err!=nil||!res{
+	//	core.Logger.Println("更新%s 失败 err：%s",line.Name,err)
+	//	return false
+	//}
+
+	motors,err:=xml.GetMotorsByCollectDeviceId(collectDevice.Id)
 	if err!=nil{
 		core.Logger.Println("不存在任何电机err：%s",err)
 		return false
@@ -212,6 +236,12 @@ func DataParse(bytes []byte,mqid int) (bool){
 				//_alarmPoints=append(_alarmPoints,pt)
 			}
 			if len(diDataModels)>0{
+				//倒序排序,按照param排序
+				sort.Slice(diDataModels, func(i, j int) bool {
+					a:=diDataModels[i].Remark
+					b:=diDataModels[j].Remark
+					return  a>b
+				})
 				var diParams=""
 				var diValues=make([]int,0)
 				for _,dataformmodel :=range  diDataModels  {
@@ -256,13 +286,19 @@ func DataParse(bytes []byte,mqid int) (bool){
 		core.Logger.Println("不存在任何采集设备err：%s",err)
 		return false
 	}
+	//倒序排序,按照tag排序
+	sort.Slice(_normalPoints, func(i, j int) bool {
+		a:=_normalPoints[i].Tags()["motorid"]
+		b:=_normalPoints[j].Tags()["motorid"]
+		return  a>b
+	})
 	influx.WritesPoints(conn,collect.ProductionlineId,_normalPoints)
 	//influx.WritesPoints(conn,"alarm",_alarmPoints)
 	//influx.WritesPoints(conn,"otherdi",_otherDiPoints)
 
 	elapsed := time.Since(t1)
 	fmt.Println("耗时:%d ", elapsed)
-	fmt.Println("write tps: ", 1e14/elapsed)
+	//fmt.Println("write tps: %d ms", 1e14/elapsed)
 
 	//存储原始数据
 	xml.InsertOriginalbytes(xml.Originalbytes{Productionlineid:collect.ProductionlineId,Collectdeviceindex:mq.Collectdeviceindex,
@@ -291,7 +327,7 @@ func  ConvertToNormal(form *xml.Dataformmodel , values []int )( float32 ){
 		core.Logger.Println("数据物理精度错误！data : %s ,err：%s",form.DataPhysicalAccuracy,err)
 		return 0
 	}
-var oldValue = values[form.Index]
+var oldValue = values[form.Index+1]
 switch (form.DataPhysicalFeature){
 case "温度":
 var des = extensions.TempTranster(oldValue)

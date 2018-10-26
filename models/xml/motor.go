@@ -11,21 +11,21 @@ import (
 type Motor struct {
 	Id	int64
 	EmbeddedDeviceId	int
-	FeedSize	float64	//进料尺寸
-	FinalSize	float64	//出料尺寸
+	FeedSize	float32	//进料尺寸
+	FinalSize	float32	//出料尺寸
 	MotorId	string
-	MotorPower	float64	//电机功率
+	MotorPower	float32	//电机功率
 	MotorTypeId	string
 	Name	string
 	ProductSpecification	string
 	ProductionLineId	string
 	SerialNumber	string
-	StandValue	float64	//额定值
+	StandValue	float32	//额定值
 	Time	int64
 	IsBeltWeight	bool
 	IsMainBeltWeight	bool
-	OffSet	float64
-	Slope	float64
+	OffSet	float32
+	Slope	float32
 	UseCalc	bool
 }
 
@@ -80,6 +80,27 @@ func GetMotor(Id int64) (motor Motor, err error) {
 		return motor, err
 	}
 	return motors[0], nil
+}
+
+func GetMotorsByCollectDeviceId(collectDeviceId int) (motors []Motor, err error) {
+	rows, err := db.Xml.Query("select * from motor where EmbeddedDeviceId = ?",collectDeviceId)
+	if err != nil {
+		return motors, err
+	}
+	if len(rows) <= 0 {
+		return motors, nil
+	}
+	return _MotorRowsToArray(rows)
+}
+func GetMotorsByProductionlineId(productionlineId string) (motors []Motor, err error) {
+	rows, err := db.Xml.Query("select * from motor where ProductionLineId = ?",productionlineId)
+	if err != nil {
+		return motors, err
+	}
+	if len(rows) <= 0 {
+		return motors, nil
+	}
+	return _MotorRowsToArray(rows)
 }
 func GetMotorByMotorId(motorId string) (motor Motor, err error) {
 	rows, err := db.Xml.Query("select Id, EmbeddedDeviceId, FeedSize, FinalSize, MotorId, MotorPower, MotorTypeId, Name, ProductSpecification, ProductionLineId, SerialNumber, StandValue, Time, IsBeltWeight, IsMainBeltWeight, OffSet, Slope, UseCalc from motor where motorId=?", motorId)
@@ -177,28 +198,32 @@ func _MotorRowsToArray(maps []map[string][]byte) ([]Motor, error) {
 		if err != nil {
 			return nil, errors.New("parse EmbeddedDeviceId error: " + err.Error())
 		}
-		model.FeedSize, err = strconv.ParseFloat(string(obj["FeedSize"]), 64)
+		feedSize, err := strconv.ParseFloat(string(obj["FeedSize"]), 32)
 		if err != nil {
 			return nil, errors.New("parse FeedSize error: " + err.Error())
 		}
-		model.FinalSize, err = strconv.ParseFloat(string(obj["FinalSize"]), 64)
+		model.FeedSize=float32(feedSize)
+		finalSize, err:= strconv.ParseFloat(string(obj["FinalSize"]), 32)
 		if err != nil {
 			return nil, errors.New("parse FinalSize error: " + err.Error())
 		}
+		model.FinalSize=float32(finalSize)
 		model.MotorId = string(obj["MotorId"])
-		model.MotorPower, err = strconv.ParseFloat(string(obj["MotorPower"]), 64)
+		power, err := strconv.ParseFloat(string(obj["MotorPower"]), 32)
 		if err != nil {
 			return nil, errors.New("parse MotorPower error: " + err.Error())
 		}
+		model.MotorPower=float32(power)
 		model.MotorTypeId = string(obj["MotorTypeId"])
 		model.Name = string(obj["Name"])
 		model.ProductSpecification = string(obj["ProductSpecification"])
 		model.ProductionLineId = string(obj["ProductionLineId"])
 		model.SerialNumber = string(obj["SerialNumber"])
-		model.StandValue, err = strconv.ParseFloat(string(obj["StandValue"]), 64)
+		standValue, err := strconv.ParseFloat(string(obj["StandValue"]), 32)
 		if err != nil {
 			return nil, errors.New("parse StandValue error: " + err.Error())
 		}
+		model.StandValue=float32(standValue)
 		model.Time, err = strconv.ParseInt(string(obj["Time"]), 10, 64)
 		if err != nil {
 			return nil, errors.New("parse Time error: " + err.Error())
@@ -213,14 +238,16 @@ func _MotorRowsToArray(maps []map[string][]byte) ([]Motor, error) {
 		} else {
 			model.IsMainBeltWeight = false
 		}
-		model.OffSet, err = strconv.ParseFloat(string(obj["OffSet"]), 64)
+		offSet, err := strconv.ParseFloat(string(obj["OffSet"]), 32)
 		if err != nil {
 			return nil, errors.New("parse OffSet error: " + err.Error())
 		}
-		model.Slope, err = strconv.ParseFloat(string(obj["Slope"]), 64)
+		model.OffSet=float32(offSet)
+		slope, err := strconv.ParseFloat(string(obj["Slope"]), 32)
 		if err != nil {
 			return nil, errors.New("parse Slope error: " + err.Error())
 		}
+		model.Slope=float32(slope)
 		if strings.ToLower(string(obj["UseCalc"])) == "true" || obj["UseCalc"][0] == 1 {
 			model.UseCalc = true
 		} else {

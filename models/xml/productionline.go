@@ -65,6 +65,20 @@ func GetProductionline(Id int64) (productionline Productionline, err error) {
 	}
 	return productionlines[0], nil
 }
+func GetProductionlineById(productionLineId string) (productionline Productionline, err error) {
+	rows, err := db.Xml.Query("select Id, Name, ProductionLineId, Time from productionline where ProductionLineId=?", productionLineId)
+	if err != nil {
+		return productionline, err
+	}
+	if len(rows) <= 0 {
+		return productionline, nil
+	}
+	productionlines, err := _ProductionlineRowsToArray(rows)
+	if err != nil {
+		return productionline, err
+	}
+	return productionlines[0], nil
+}
 
 func GetProductionlineRowCount() (count int, err error) {
 	rows, err := db.Xml.Query("select count(0) Count from productionline")

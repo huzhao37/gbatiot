@@ -170,6 +170,10 @@ func _DataformmodelRowsToArray(maps []map[string][]byte) ([]Dataformmodel, error
 		model.LineId = string(obj["LineId"])
 		model.CollectdeviceIndex = string(obj["collectdevice_index"])
 		model.MotorId = string(obj["MotorId"])
+		model.Index, err = strconv.Atoi(string(obj["Index"]))
+		if err != nil {
+			return nil, errors.New("parse Index error: " + err.Error())
+		}
 		model.DataPhysicalId, err = strconv.Atoi(string(obj["DataPhysicalId"]))
 		if err != nil {
 			return nil, errors.New("parse DataPhysicalId error: " + err.Error())
