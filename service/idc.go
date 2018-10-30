@@ -16,6 +16,7 @@ import (
 	"yuniot/framework/influx"
 	"yuniot/models/others"
 	"sort"
+	"strings"
 )
 var (
 	myConfig  = new(core.Config)
@@ -43,9 +44,9 @@ func main() {
 	for   _,q :=range  mqs {
 	//go func(mq *xml.Messagequeue) {
 	//var remains =0
-	if q.Id>2{
-		continue
-	}
+	//if q.Id>2{
+	//	continue
+	//}
 	 go rabbitmq.Read2(DataParse, q.Username, q.Pwd, q.Host+":"+strconv.Itoa(q.Port), q.Routekey, 0,q.Id)
 	//}(&q)
 	}
@@ -73,11 +74,11 @@ func DataParse(bytes []byte,mqid int) (bool){
 	//repository.Init()
 	_, newBytes := core.BytesSplit(bytes, 6)
 	Collectdeviceindex := core.BytesConvertHexArr(newBytes)
-	if Collectdeviceindex!=mq.Collectdeviceindex{
+	if strings.ToUpper(Collectdeviceindex)!=mq.Collectdeviceindex{
 		return false
 	}
 	var datagram=repository.BytesParse(bytes)//数据接收器
-	if Collectdeviceindex!=mq.Collectdeviceindex{
+	if strings.ToUpper(Collectdeviceindex)!=mq.Collectdeviceindex{
 		return false
 	}
 	if len(datagram.PValues)<=0{
@@ -101,15 +102,21 @@ func DataParse(bytes []byte,mqid int) (bool){
 	_model=datagram
 	_time=theTime
 	_unixTimeStr=strconv.FormatInt(time.Date(theTime.Year(), theTime.Month(), theTime.Day(),0, 0, 0, 0, theTime.Location()).Unix(),10)
-	//存储至influxdb
-	_normalPoints=make([]*client.Point,0)
-	conn:=influx.ConnInflux()
 	//todo
 	collectDevice,err:=xml.GetCollectdeviceByIndex(_model.Collectdeviceindex)
 	if err!=nil{
 		core.Logger.Println("根据Index %s 获取相关采集设备err：%s",_model.Collectdeviceindex,err)
 		return false
 	}
+	//存储至influxdb
+	_normalPoints=make([]*client.Point,0)
+	influxd,err:=xml.GetInfluxByProductionlineId(collectDevice.ProductionlineId)
+	if err!=nil{
+		core.Logger.Println("获取产线 %s 的influxdb ，err：%s",collectDevice.ProductionlineId,err)
+		return false
+	}
+	conn:=influx.ConnInfluxParam(influxd.Addr,influxd.User,influxd.Pwd)
+	defer conn.Close()
 	//更新产线最新时间
 	//line,err:=xml.GetProductionlineById(collectDevice.ProductionlineId)
 	//if err!=nil{
@@ -141,7 +148,7 @@ func DataParse(bytes []byte,mqid int) (bool){
 			var sccParms []xml.Motorparams
 			if MParms != nil && len(MParms) > 0 {
 				linq.From(MParms).Where(func(i interface{}) bool {
-					return i.(xml.Motorparams).MotorTypeId==code
+					return i.(xml.Motorparams).MotorTypeId==code&& i.(xml.Motorparams).ProductionLineId==motor.ProductionLineId
 				}).ToSlice(&sccParms)
 			}
 			bussiness,err:=xml.GetBussinessByMotorid(id)
@@ -292,6 +299,14 @@ func DataParse(bytes []byte,mqid int) (bool){
 		b:=_normalPoints[j].Tags()["motorid"]
 		return  a>b
 	})
+	exist,err:=influx.ExistDB(conn,collect.ProductionlineId)
+	if err==nil&&!exist{
+		_,err=influx.CreateDB(conn,collect.ProductionlineId)
+		if err!=nil{
+			core.Logger.Println("不创建数据库%s err：%s",collect.ProductionlineId,err)
+			return false
+		}
+	}
 	influx.WritesPoints(conn,collect.ProductionlineId,_normalPoints)
 	//influx.WritesPoints(conn,"alarm",_alarmPoints)
 	//influx.WritesPoints(conn,"otherdi",_otherDiPoints)
@@ -327,7 +342,7 @@ func  ConvertToNormal(form *xml.Dataformmodel , values []int )( float32 ){
 		core.Logger.Println("数据物理精度错误！data : %s ,err：%s",form.DataPhysicalAccuracy,err)
 		return 0
 	}
-var oldValue = values[form.Index+1]
+var oldValue = values[form.Index]
 switch (form.DataPhysicalFeature){
 case "温度":
 var des = extensions.TempTranster(oldValue)

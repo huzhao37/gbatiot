@@ -22,6 +22,12 @@ func initRouter() *gin.Engine {
 	{
 		taR.GET("/dataByTime",GetDataByTime)
 		taR.GET("/login", GetUsersApi)
+		taR.GET("/motors", GetMotorsApi)
+		taR.GET("/currentmaincymonth", GetMainCyCurrentMonthApi)
+		taR.GET("/currentmaincyday", GetMainCyCurrentDayApi)
+		taR.GET("/currentmaincy", GetMainCyCurrentApi)
+		taR.GET("/currentbeltcys", GetBeltCysCurrentDayApi)
+		taR.GET("/currentdevice", GetDeviceCurrentApi)
 		//taR.POST("/login", LoginApi)
 	}
 	return router

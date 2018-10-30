@@ -14,6 +14,7 @@ type Motorparams struct {
 	Description	string
 	MotorTypeId	string
 	PhysicId	int
+	ProductionLineId string
 	Time	time.Time
 }
 
@@ -36,7 +37,7 @@ func ExistMotorparams(Id int) (bool, error) {
 }
 
 func InsertMotorparams(motorparams Motorparams) (int64, error) {
-	result, err := db.Xml.Exec("insert into motorparams(Param,Description,MotorTypeId,PhysicId,Time) values(?,?,?,?,?)", motorparams.Param,motorparams.Description,motorparams.MotorTypeId,motorparams.PhysicId,motorparams.Time)
+	result, err := db.Xml.Exec("insert into motorparams(Param,Description,MotorTypeId,PhysicId,ProductionLineId,Time) values(?,?,?,?,?,?)", motorparams.Param,motorparams.Description,motorparams.MotorTypeId,motorparams.PhysicId,motorparams.ProductionLineId,motorparams.Time)
 	if err != nil {
 		return -1, err
 	}
@@ -44,7 +45,7 @@ func InsertMotorparams(motorparams Motorparams) (int64, error) {
 }
 
 func UpdateMotorparams(motorparams Motorparams) (bool, error) {
-	result, err := db.Xml.Exec("update motorparams set Param=?, Description=?, MotorTypeId=?, PhysicId=?, Time=? where Id=?", motorparams.Param, motorparams.Description, motorparams.MotorTypeId, motorparams.PhysicId, motorparams.Time, motorparams.Id)
+	result, err := db.Xml.Exec("update motorparams set Param=?, Description=?, MotorTypeId=?, PhysicId=?,ProductionLineId=?, Time=? where Id=?", motorparams.Param, motorparams.Description, motorparams.MotorTypeId, motorparams.PhysicId, motorparams.ProductionLineId,motorparams.Time, motorparams.Id)
 	if err != nil {
 		return false, err
 	}
@@ -56,7 +57,7 @@ func UpdateMotorparams(motorparams Motorparams) (bool, error) {
 }
 
 func GetMotorparams(Id int) (motorparams Motorparams, err error) {
-	rows, err := db.Xml.Query("select Id, Param, Description, MotorTypeId, PhysicId, Time from motorparams where Id=?", Id)
+	rows, err := db.Xml.Query("select Id, Param, Description, MotorTypeId, PhysicId, ProductionLineId,Time from motorparams where Id=?", Id)
 	if err != nil {
 		return motorparams, err
 	}
@@ -97,6 +98,16 @@ func GetMotorparamList() (motorparams []Motorparams, err error) {
 	}
 	return _MotorparamsRowsToArray(rows)
 }
+func GetMotorparamListByproductionlineId(productionlineId string) (motorparams []Motorparams, err error) {
+	rows, err := db.Xml.Query("select * from motorparams  ProductionLineId=?",productionlineId)
+	if err != nil {
+		return motorparams, err
+	}
+	if len(rows) <= 0 {
+		return motorparams, nil
+	}
+	return _MotorparamsRowsToArray(rows)
+}
 func _MotorparamsRowsToArray(maps []map[string][]byte) ([]Motorparams, error) {
 	models := make([]Motorparams, len(maps))
 	var err error
@@ -109,6 +120,7 @@ func _MotorparamsRowsToArray(maps []map[string][]byte) ([]Motorparams, error) {
 		model.Param = string(obj["Param"])
 		model.Description = string(obj["Description"])
 		model.MotorTypeId = string(obj["MotorTypeId"])
+		model.ProductionLineId = string(obj["ProductionLineId"])
 		model.PhysicId, err = strconv.Atoi(string(obj["PhysicId"]))
 		if err != nil {
 			return nil, errors.New("parse PhysicId error: " + err.Error())

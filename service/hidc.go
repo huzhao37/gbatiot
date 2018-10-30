@@ -4,7 +4,6 @@ import (
 	"yuniot/framework/influx"
 	"fmt"
 	"yuniot/core"
-	"yuniot/repository"
 	"time"
 )
 
@@ -30,12 +29,18 @@ func main(){
 	//	"2018-10-25 13:00:00","2018-10-25 14:00:00","")
 
 	//statistics
+	//t:=time.Now()
+	//res,err:=repository.GetStatistics(conn,"JXD001-CY1083","2018-10-25 13:00:00","2018-10-25 14:00:00")
+	//if err != nil {
+	//	core.Logger.Printf("转换sql出错%s",err)
+	//}
+
+	//query-cmd
 	t:=time.Now()
-	res,err:=repository.GetStatistics(conn,"JXD001-CY1083","2018-10-25 13:00:00","2018-10-25 14:00:00")
+	res,err:=influx.Repl(conn,"CQDY",90)
 	if err != nil {
 		core.Logger.Printf("转换sql出错%s",err)
 	}
-
 	fmt.Printf(" result : %d \n 耗时：%d ms", res,time.Since(t)/1e6)
 }
 

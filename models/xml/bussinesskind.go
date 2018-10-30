@@ -14,6 +14,7 @@ type Bussinesskind struct {
 	Motortype	string	//电机类型
 	Calcfomula	string	//计算公式
 	Defaultparam	string	//默认参数英文名称
+	Productionlineid string//产线ID
 	Remark	string	//备注
 	Time	time.Time	//时间
 }
@@ -37,7 +38,7 @@ func ExistBussinesskind(id int) (bool, error) {
 }
 
 func InsertBussinesskind(bussinesskind Bussinesskind) (int64, error) {
-	result, err := db.Xml.Exec("insert into bussinesskind(bussinessid,motortype,calcfomula,defaultparam,remark,time) values(?,?,?,?,?,?)", bussinesskind.Bussinessid,bussinesskind.Motortype,bussinesskind.Calcfomula,bussinesskind.Defaultparam,bussinesskind.Remark,bussinesskind.Time)
+	result, err := db.Xml.Exec("insert into bussinesskind(bussinessid,motortype,calcfomula,defaultparam,productionlineid，remark,time) values(?,?,?,?,?,?)", bussinesskind.Bussinessid,bussinesskind.Motortype,bussinesskind.Calcfomula,bussinesskind.Defaultparam,bussinesskind.Productionlineid,bussinesskind.Remark,bussinesskind.Time)
 	if err != nil {
 		return -1, err
 	}
@@ -45,7 +46,7 @@ func InsertBussinesskind(bussinesskind Bussinesskind) (int64, error) {
 }
 
 func UpdateBussinesskind(bussinesskind Bussinesskind) (bool, error) {
-	result, err := db.Xml.Exec("update bussinesskind set bussinessid=?, motortype=?, calcfomula=?, defaultparam=?, remark=?, time=? where id=?", bussinesskind.Bussinessid, bussinesskind.Motortype, bussinesskind.Calcfomula, bussinesskind.Defaultparam, bussinesskind.Remark, bussinesskind.Time, bussinesskind.Id)
+	result, err := db.Xml.Exec("update bussinesskind set bussinessid=?, motortype=?, calcfomula=?, defaultparam=?, productionlineid=?,remark=?, time=? where id=?", bussinesskind.Bussinessid, bussinesskind.Motortype, bussinesskind.Calcfomula, bussinesskind.Defaultparam,bussinesskind.Productionlineid, bussinesskind.Remark, bussinesskind.Time, bussinesskind.Id)
 	if err != nil {
 		return false, err
 	}
@@ -57,7 +58,7 @@ func UpdateBussinesskind(bussinesskind Bussinesskind) (bool, error) {
 }
 
 func GetBussinesskind(id int) (bussinesskind Bussinesskind, err error) {
-	rows, err := db.Xml.Query("select id, bussinessid, motortype, calcfomula, defaultparam, remark, time from bussinesskind where id=?", id)
+	rows, err := db.Xml.Query("select id, bussinessid, motortype, calcfomula, defaultparam,productionlineid, remark, time from bussinesskind where id=?", id)
 	if err != nil {
 		return bussinesskind, err
 	}
@@ -70,9 +71,9 @@ func GetBussinesskind(id int) (bussinesskind Bussinesskind, err error) {
 	}
 	return bussinesskinds[0], nil
 }
-func GetBussinesskindByKindAndType(kind string,motortype string) (bussinesskind Bussinesskind, err error) {
-	rows, err := db.Xml.Query("select id, bussinessid, motortype, calcfomula, defaultparam, remark, time from bussinesskind where " +
-		"bussinessid=? and motortype=?", kind,motortype)
+func GetBussinesskindByKindAndTypeAndLineId(kind string,motortype string,productionlineid string) (bussinesskind Bussinesskind, err error) {
+	rows, err := db.Xml.Query("select id, bussinessid, motortype, calcfomula, defaultparam, productionlineid,remark, time from bussinesskind where " +
+		"bussinessid=? and motortype=? and productionlineid=? ", kind,motortype,productionlineid)
 	if err != nil {
 		return bussinesskind, err
 	}
@@ -117,6 +118,7 @@ func _BussinesskindRowsToArray(maps []map[string][]byte) ([]Bussinesskind, error
 		model.Calcfomula = string(obj["calcfomula"])
 		model.Defaultparam = string(obj["defaultparam"])
 		model.Remark = string(obj["remark"])
+		model.Productionlineid = string(obj["productionlineid"])
 		model.Time, err = time.ParseInLocation(golibs.Time_TIMEStandard, string(obj["time"]), time.Local)
 		if err != nil {
 			return nil, errors.New("parse Time error: " + err.Error())

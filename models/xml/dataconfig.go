@@ -117,7 +117,7 @@ func GetDataconfigRowListBydatatypeid(datatypeidIsDesc bool, PageIndex, PageSize
 	return _DataconfigRowsToArray(rows)
 }
 func GetDataconfigByCollectdeviceindex(collectdeviceindex string) (dataconfigs []Dataconfig, err error) {
-	rows, err := db.Xml.Query("select id, datatypeid, count, Collectdeviceindex from dataconfig where Collectdeviceindex=?",collectdeviceindex)
+	rows, err := db.Xml.Query("select id, datatypeid, count, collectdeviceindex from dataconfig where Collectdeviceindex=?",collectdeviceindex)
 	if err != nil {
 		return dataconfigs, err
 	}

@@ -101,7 +101,7 @@ func _CarRowsToArray(maps []map[string][]byte) ([]Car, error) {
 		model.Name = string(obj["name"])
 		model.Productionlineid = string(obj["productionlineid"])
 		model.Driver = string(obj["driver"])
-		model.Time, err = time.ParseInLocation(golibs.Time_TIMEMYSQL, string(obj["time"]), time.Local)
+		model.Time, err = time.ParseInLocation(golibs.Time_TIMEStandard, string(obj["time"]), time.Local)
 		if err != nil {
 			return nil, errors.New("parse Time error: " + err.Error())
 		}

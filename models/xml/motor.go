@@ -102,6 +102,30 @@ func GetMotorsByProductionlineId(productionlineId string) (motors []Motor, err e
 	}
 	return _MotorRowsToArray(rows)
 }
+func GetMainCyByProductionlineId(productionlineId string) (motor Motor, err error) {
+	rows, err := db.Xml.Query("select * from motor where IsMainBeltWeight=1 and ProductionLineId = ?",productionlineId)
+	if err != nil {
+		return motor, err
+	}
+	if len(rows) <= 0 {
+		return motor, nil
+	}
+	motors, err := _MotorRowsToArray(rows)
+	if err != nil {
+		return motor, err
+	}
+	return motors[0], nil
+}
+func GetBeltCyAndNotMainByProductionlineId(productionlineId string) (motors []Motor, err error) {
+	rows, err := db.Xml.Query("select * from motor where IsBeltWeight=1 and IsMainBeltWeight=0  and ProductionLineId = ?",productionlineId)
+	if err != nil {
+		return motors, err
+	}
+	if len(rows) <= 0 {
+		return motors, nil
+	}
+	return _MotorRowsToArray(rows)
+}
 func GetMotorByMotorId(motorId string) (motor Motor, err error) {
 	rows, err := db.Xml.Query("select Id, EmbeddedDeviceId, FeedSize, FinalSize, MotorId, MotorPower, MotorTypeId, Name, ProductSpecification, ProductionLineId, SerialNumber, StandValue, Time, IsBeltWeight, IsMainBeltWeight, OffSet, Slope, UseCalc from motor where motorId=?", motorId)
 	if err != nil {

@@ -70,7 +70,20 @@ func GetInflux(id int) (influx Influx, err error) {
 	}
 	return influxs[0], nil
 }
-
+func GetInfluxByProductionlineId(productionlineId string) (influx Influx, err error) {
+	rows, err := db.Xml.Query("select id, productionlineid, addr, user, pwd, remark, time from influx where productionlineid=?", productionlineId)
+	if err != nil {
+		return influx, err
+	}
+	if len(rows) <= 0 {
+		return influx, nil
+	}
+	influxs, err := _InfluxRowsToArray(rows)
+	if err != nil {
+		return influx, err
+	}
+	return influxs[0], nil
+}
 func GetInfluxRowCount() (count int, err error) {
 	rows, err := db.Xml.Query("select count(0) Count from influx")
 	if err != nil {
@@ -103,7 +116,7 @@ func _InfluxRowsToArray(maps []map[string][]byte) ([]Influx, error) {
 		model.User = string(obj["user"])
 		model.Pwd = string(obj["pwd"])
 		model.Remark = string(obj["remark"])
-		model.Time, err = time.ParseInLocation(golibs.Time_TIMEMYSQL, string(obj["time"]), time.Local)
+		model.Time, err = time.ParseInLocation(golibs.Time_TIMEStandard, string(obj["time"]), time.Local)
 		if err != nil {
 			return nil, errors.New("parse Time error: " + err.Error())
 		}

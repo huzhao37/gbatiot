@@ -187,7 +187,7 @@ func CalcBootTimes(conn client.Client,database string,measure string,feildName s
 	return 0,err
 }
 
-//计算负荷--校准值，开机时间，额定值，单位：顿/小时
+//计算平均负荷--校准值，开机时间，额定值，单位：顿/小时
 func CalcLoadStall(value float32,capacity float32,bootTimes int)( loadStall float32,err error){
 	loadStall=0
 	if capacity*float32(bootTimes)*value==0{
@@ -201,5 +201,17 @@ func CalcLoadStall(value float32,capacity float32,bootTimes int)( loadStall floa
 	return loadStall,err
 }
 
-
+//计算瞬时负荷--校准值，开机时间，额定值，单位：顿/小时
+func CalcInstantLoadStall(value float32,capacity float32)( loadStall float32,err error){
+	loadStall=0
+	if capacity*value==0{
+		return loadStall,err
+	}
+	core.Try(func() {
+		loadStall= float32(extensions.Round(float64((value*60)/capacity),3))
+	}, func(e interface{}) {
+		core.Logger.Printf("获取产量负荷出错：%s",e)
+	})
+	return loadStall,err
+}
 

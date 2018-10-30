@@ -1,11 +1,11 @@
 [global]
 env=test
 [test]
-redis.host=10.1.5.170:26125
+redis.host=47.97.5.85:26125
 redis.db=1
 redis.maxidle=1
 redis.maxactive=10
-redis.auth=Unitoon2018
+redis.auth=Unitoon2019:Unitoon2019
 
 rabbitmq.host=
 rabbitmq.user=
@@ -25,11 +25,11 @@ xmlconn=yunt:Unitoon_2018@(10.1.5.170:63306)/yunt_xml?charset=utf8&loc=Local
 authconn=yunt:Unitoon_2018@(10.1.5.170:63306)/yunt_auth?charset=utf8&loc=Local
 
 [prod]
-redis.host=192.168.6.250:26125
+redis.host=10.81.176.44:26125
 redis.db=1
 redis.maxidle=1
 redis.maxactive=10
-redis.auth=Unitoon2018
+redis.auth=Unitoon2019:Unitoon2019
 
 rabbitmq.host=
 rabbitmq.user=
