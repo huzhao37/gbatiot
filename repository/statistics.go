@@ -48,8 +48,8 @@ func GetStatistics(conn client.Client,motor xml.Motor,start string,end string)(m
 		var accumulativeweight float32=0
 		if bussiness.Defaultparam!=""{
 			accDatas=append(accDatas,bussiness.Defaultparam)
-			accumulativeweightMap,err:=CalcAccu(conn,motor.ProductionLineId,motor.MotorTypeId,bussiness.Defaultparam,motor.MotorId,
-				start,end," ")
+			accumulativeweightMap,err:=CalcAccuDiffNonNeg(conn,motor.ProductionLineId,motor.MotorTypeId,bussiness.Defaultparam,motor.MotorId,
+				start,end)
 			if err!=nil{
 				core.Logger.Printf("计算产量出错：%s",err)
 				return nil,err
@@ -64,8 +64,8 @@ func GetStatistics(conn client.Client,motor xml.Motor,start string,end string)(m
 			}
 		if bussiness.Defaultparam!=""{
 			accDatas=append(accDatas,bussiness.Defaultparam)
-			totalPowerMap,err:=CalcAccu(conn,motor.ProductionLineId,motor.MotorTypeId,bussiness.Defaultparam,motor.MotorId,
-				start,end," ")
+			totalPowerMap,err:=CalcAccuDiffNonNeg(conn,motor.ProductionLineId,motor.MotorTypeId,bussiness.Defaultparam,motor.MotorId,
+				start,end)
 			if err!=nil{
 				core.Logger.Printf("计算电量出错：%s",err)
 				return nil,err
@@ -125,22 +125,26 @@ func GetStatistics(conn client.Client,motor xml.Motor,start string,end string)(m
 				}
 				datamap["boottimes"]=float32(boottimes)
 			}
-		//累加：电量
-		bussiness,err=xml.GetBussinesskindByKindAndTypeAndLineId("totalpower",motor.MotorTypeId,motor.ProductionLineId)
+		//累加：电量 //可能存在多个电量累加的情况
+		bussinesses,err:=xml.GetBussinesskindsByKindAndTypeAndLineId("totalpower",motor.MotorTypeId,motor.ProductionLineId)
 		if err!=nil{
 			core.Logger.Printf("获取业务信息出错：%s",err)
 			return nil,err
 		}
-		if bussiness.Defaultparam!=""{
-				accDatas=append(accDatas,bussiness.Defaultparam)
-				totalPowerMap,err:=CalcAccu(conn,motor.ProductionLineId,motor.MotorTypeId,bussiness.Defaultparam,motor.MotorId,
-					start,end," ")
+		if len(bussinesses)>0{
+			var totalPower float32=0
+			for i:=0;i<len(bussinesses) ;i++  {
+				var buss=bussinesses[i]
+				accDatas=append(accDatas,buss.Defaultparam)
+				totalPowerMap,err:=CalcAccuDiffNonNeg(conn,motor.ProductionLineId,motor.MotorTypeId,buss.Defaultparam,motor.MotorId,
+					start,end)
 				if err!=nil{
 					core.Logger.Printf("计算电量出错：%s",err)
 					return nil,err
 				}
-				totalPower:=totalPowerMap[bussiness.Defaultparam]
-				datamap[bussiness.Defaultparam]=totalPower
+				totalPower=totalPower+totalPowerMap[buss.Defaultparam]
+			}
+			datamap[bussiness.Defaultparam]=totalPower
 			}
 		//平均：除了累加的监测点
 		avgMaps,err:=CalcAvgs(conn,motor.ProductionLineId,motor.MotorTypeId,motor.MotorId,runningParam,

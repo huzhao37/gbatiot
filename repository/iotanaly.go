@@ -93,6 +93,60 @@ func CalcAccu(conn client.Client,database string,measure string,feildName string
 	return nil,err
 }
 
+//计算累加值---单个监测点差异值的和
+func CalcAccuDiff(conn client.Client,database string,measure string,feildName string,motorid string,
+	start string,end string)(map[string]float32,error){
+	var err error
+	qs,err:= fmt.Sprintf("SELECT Sum(%s) FROM (SELECT DIFFERENCE(%s) FROM %s WHERE time >= '%s' AND time <= '%s'  AND motorid = '%s'  AND %s>-1  %s) where difference > 0",
+		"difference",feildName,measure,start,end,motorid) ,nil
+	res,err:=influx.QueryDB(conn,database,qs)
+	if len(res)==0||len(res[0].Series)==0{
+		return nil,nil
+	}
+	if err==nil{
+		for _,row:=range  res[0].Series[0].Values {
+			_, err := time.Parse(time.RFC3339, row[0].(string))
+			if err != nil {
+				return nil,err
+			}
+			val ,err:=strconv.ParseFloat(fmt.Sprintf("%s", row[1].(json.Number)),32)
+			if err!=nil{
+				return nil,err
+			}
+
+			return map[string]float32{feildName:float32(val)},nil
+		}
+	}
+	return nil,err
+}
+
+//计算累加值---单个监测点非负差异值的和
+func CalcAccuDiffNonNeg(conn client.Client,database string,measure string,feildName string,motorid string,
+	start string,end string)(map[string]float32,error){
+	var err error
+	qs,err:= fmt.Sprintf("SELECT Sum(%s) FROM (SELECT NON_NEGATIVE_DIFFERENCE(%s) FROM %s WHERE time >= '%s' AND time <= '%s'  AND motorid = '%s'  AND %s>-1  %s) ",
+		"non_negative_difference",feildName,measure,start,end,motorid) ,nil
+	res,err:=influx.QueryDB(conn,database,qs)
+	if len(res)==0||len(res[0].Series)==0{
+		return nil,nil
+	}
+	if err==nil{
+		for _,row:=range  res[0].Series[0].Values {
+			_, err := time.Parse(time.RFC3339, row[0].(string))
+			if err != nil {
+				return nil,err
+			}
+			val ,err:=strconv.ParseFloat(fmt.Sprintf("%s", row[1].(json.Number)),32)
+			if err!=nil{
+				return nil,err
+			}
+
+			return map[string]float32{feildName:float32(val)},nil
+		}
+	}
+	return nil,err
+}
+
 //计算平均值--所有开机状态下的监测点的平均值
 func CalcAvgs(conn client.Client,database string,measure string,motorid string,bootParam string,
 	start string,end string,where string)([]map[string]float32,error){

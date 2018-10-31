@@ -86,6 +86,21 @@ func GetBussinesskindByKindAndTypeAndLineId(kind string,motortype string,product
 	}
 	return bussinesskinds[0], nil
 }
+func GetBussinesskindsByKindAndTypeAndLineId(kind string,motortype string,productionlineid string) (bussinesskind []Bussinesskind, err error) {
+	rows, err := db.Xml.Query("select id, bussinessid, motortype, calcfomula, defaultparam, productionlineid,remark, time from bussinesskind where " +
+		"bussinessid=? and motortype=? and productionlineid=? ", kind,motortype,productionlineid)
+	if err != nil {
+		return bussinesskind, err
+	}
+	if len(rows) <= 0 {
+		return bussinesskind, nil
+	}
+	bussinesskinds, err := _BussinesskindRowsToArray(rows)
+	if err != nil {
+		return bussinesskind, err
+	}
+	return bussinesskinds, nil
+}
 func GetBussinesskindRowCount() (count int, err error) {
 	rows, err := db.Xml.Query("select count(0) Count from bussinesskind")
 	if err != nil {

@@ -48,6 +48,7 @@ func main() {
 	//	continue
 	//}
 	 go rabbitmq.Read2(DataParse, q.Username, q.Pwd, q.Host+":"+strconv.Itoa(q.Port), q.Routekey, 0,q.Id)
+	 time.Sleep(3*time.Second)
 	//}(&q)
 	}
 	//阻塞
