@@ -323,3 +323,36 @@ func GetInstantStatistics(conn client.Client,motor xml.Motor)(map[string]interfa
 	return m,nil
 }
 
+//获取产线状态
+func GetLineStatus(conn client.Client,productionlineId string)(bool,error){
+	line,err:=xml.GetProductionlineById(productionlineId)
+	if err!=nil{
+		return false,err
+	}
+	return (time.Now().Unix()-line.Time)<=600,nil
+}
+
+//获取该产线下所有设备状态
+func GetDevicesStatus(conn client.Client,productionlineId string)([]map[string]bool,error){
+	motors,err:=xml.GetMotorsByProductionlineId(productionlineId)
+	if err!=nil||len(motors)==0{
+		return nil,err
+	}
+	loc, _ := time.LoadLocation("Local")   //重要：获取时区
+	timeLayout := "2006-01-02 15:04:05"
+	start:=time.Date(time.Now().Year(),time.Now().Month(),time.Now().Day(),time.Now().Hour(),0,0,0,loc)
+	startStr := start.Format(timeLayout)
+	var devsStatus=make([]map[string]bool,0)
+	for _,m:= range motors {
+		_,last,err:=GetLasted(conn,m,startStr)
+		var status=false
+		if err==nil{
+			for key,_ := range last {
+				status=time.Since(key).Minutes()<=10
+			}
+		}
+		var devStatus=map[string]bool{m.MotorId:status}
+		devsStatus=append(devsStatus,devStatus)
+	}
+	return devsStatus,nil
+}

@@ -119,17 +119,17 @@ func DataParse(bytes []byte,mqid int) (bool){
 	conn:=influx.ConnInfluxParam(influxd.Addr,influxd.User,influxd.Pwd)
 	defer conn.Close()
 	//更新产线最新时间
-	//line,err:=xml.GetProductionlineById(collectDevice.ProductionlineId)
-	//if err!=nil{
-	//	core.Logger.Println("该采集设备%s不存在任何产线err：%s",collectDevice.Index,err)
-	//	return false
-	//}
-	//line.Time=globalTime
-	//res,err:=xml.UpdateProductionline(line)
-	//if err!=nil||!res{
-	//	core.Logger.Println("更新%s 失败 err：%s",line.Name,err)
-	//	return false
-	//}
+	line,err:=xml.GetProductionlineById(collectDevice.ProductionlineId)
+	if err!=nil{
+		core.Logger.Println("该采集设备%s不存在任何产线err：%s",collectDevice.Index,err)
+		//return false
+	}
+	line.Time=globalTime
+	res,err:=xml.UpdateProductionline(line)
+	if err!=nil||!res{
+		core.Logger.Println("更新%s 失败 err：%s",line.Name,err)
+		//return false
+	}
 
 	motors,err:=xml.GetMotorsByCollectDeviceId(collectDevice.Id)
 	if err!=nil{

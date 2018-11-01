@@ -269,3 +269,4 @@ func CalcInstantLoadStall(value float32,capacity float32)( loadStall float32,err
 	return loadStall,err
 }
 
+

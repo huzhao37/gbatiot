@@ -10,6 +10,11 @@ import (
 	"yuniot/models/xml"
 )
 
+type Status struct {
+	productionlinestatus bool
+	devicesStatus []map[string]bool
+}
+
 //获取当月主皮带累计情况概览
 func GetMainCyCurrentMonthApi(c *gin.Context){
 	isPass := c.GetBool("isPass")
@@ -209,5 +214,45 @@ func GetDeviceCurrentApi(c *gin.Context){
 	c.JSON(http.StatusOK, gin.H{
 		"status":1,
 		"msg": res,
+	})
+}
+
+//获取产线和设备状态
+func GetStatusApi(c *gin.Context){
+	isPass := c.GetBool("isPass")
+	if !isPass {
+		return
+	}
+	var lineid=c.Request.FormValue("productionlineid")
+	influxd,err:=xml.GetInfluxByProductionlineId(lineid)
+	if err!=nil{
+		core.Logger.Println("获取产线 %s 的influxdb ，err：%s",lineid,err)
+		c.JSON(http.StatusOK,gin.H{
+			"status":0,
+			"msg":"该产线没有数据库"+err.Error(),
+		})
+	}
+	conn:=influx.ConnInfluxParam(influxd.Addr,influxd.User,influxd.Pwd)
+	defer conn.Close()
+	lineStatus,err:=repository.GetLineStatus(conn,lineid)
+	if err!=nil {
+		c.JSON(http.StatusOK,gin.H{
+			"status":0,
+			"msg":"获取产线状态"+err.Error(),
+		})
+	}
+	devsStatus,err:=repository.GetDevicesStatus(conn,lineid)
+	if err!=nil {
+		c.JSON(http.StatusOK,gin.H{
+			"status":0,
+			"msg":"获取设备状态"+err.Error(),
+		})
+	}
+	var linestatus=map[string]bool{lineid:lineStatus}
+	devsStatus=append(devsStatus,linestatus)
+	//var res=Status{lineStatus,devsStatus}
+	c.JSON(http.StatusOK,gin.H{
+		"status":1,
+		"msg":devsStatus,
 	})
 }

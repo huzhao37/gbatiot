@@ -60,7 +60,7 @@ func GetInstants(conn client.Client,motor xml.Motor,
 	}
 	return nil,nil,err
 }
-//获取最新一条记录(当天开始)
+//获取最新一条记录
 func GetLasted(conn client.Client,motor xml.Motor,
 	where string)([]string,map[time.Time][]float32,error){
 	var err error

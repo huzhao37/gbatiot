@@ -17,17 +17,25 @@ func initRouter() *gin.Engine {
 	//router.OPTIONS("/login", LoginApi)
 
 	//jwt token
-	taR := router.Group("/data")
+	taR := router.Group("/cqdy")
 	taR.Use(middleware.JWTAuth())
 	{
 		taR.GET("/dataByTime",GetDataByTime)
 		taR.GET("/login", GetUsersApi)
 		taR.GET("/motors", GetMotorsApi)
+		taR.OPTIONS("/motors", GetMotorsApi)
 		taR.GET("/currentmaincymonth", GetMainCyCurrentMonthApi)
+		taR.OPTIONS("/currentmaincymonth", GetMainCyCurrentMonthApi)
 		taR.GET("/currentmaincyday", GetMainCyCurrentDayApi)
+		taR.OPTIONS("/currentmaincyday", GetMainCyCurrentDayApi)
 		taR.GET("/currentmaincy", GetMainCyCurrentApi)
+		taR.OPTIONS("/currentmaincy", GetMainCyCurrentApi)
 		taR.GET("/currentbeltcys", GetBeltCysCurrentDayApi)
+		taR.OPTIONS("/currentbeltcys", GetBeltCysCurrentDayApi)
 		taR.GET("/currentdevice", GetDeviceCurrentApi)
+		taR.OPTIONS("/currentdevice", GetDeviceCurrentApi)
+		taR.GET("/status", GetStatusApi)
+		taR.OPTIONS("/status", GetStatusApi)
 		//taR.POST("/login", LoginApi)
 	}
 	return router
