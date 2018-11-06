@@ -125,8 +125,8 @@ func DataParse(bytes []byte,mqid int) (bool){
 		//return false
 	}
 	line.Time=globalTime
-	res,err:=xml.UpdateProductionline(line)
-	if err!=nil||!res{
+	_,err=xml.UpdateProductionline(line)
+	if err!=nil{
 		core.Logger.Println("更新%s 失败 err：%s",line.Name,err)
 		//return false
 	}

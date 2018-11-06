@@ -1,7 +1,9 @@
 package main
 
 import (
-	xml "yuniot/framework/mysql"
+	db "yuniot/framework/mysql"
+	"yuniot/core"
+	"fmt"
 )
 
 
@@ -26,10 +28,20 @@ func main() {
 	//fmt.Printf("total：%d",total)
 	//var cost=time.Since(start)
 	//fmt.Printf("cost：%d ms",cost/1e6)
+	//defer db.SqlDB.Close()
+	core.Try(func() {
+		defer db.Xml.DB().Close()
+		defer  db.Auth.DB().Close()
+		// Logging to a file.
+		//f, _ := os.Create("gin.log")
+		//gin.DefaultWriter = io.MultiWriter(f)
 
-	defer xml.SqlDB.Close()
-	router := initRouter()
-	router.Run(":5200")
+		router := initRouter()
+		router.Run(":5200")
+	}, func(i interface{}) {
+		fmt.Printf("%s",i)
+	})
+
 	//outer.RunTLS(":8000", "./testdata/server.pem", "./testdata/server.key")
 }
 

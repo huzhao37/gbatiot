@@ -13,10 +13,13 @@ const (
 	MyDB     = "test1"
 	MyMeasurement = "cpu_usage"
 )
-
-func ConnInflux() client.Client {
+func init(){
 	// 从配置文件获取redis的ip以及db
 	myConfig.InitConfig("./config/config.txt")
+}
+func ConnInflux() client.Client {
+	// 从配置文件获取redis的ip以及db
+	//myConfig.InitConfig("./config/config.txt")
 	var env = myConfig.Read("global", "env")
 	var addr = myConfig.Read(env, "influx.addr")
 	var user = myConfig.Read(env, "influx.user")
@@ -33,8 +36,6 @@ func ConnInflux() client.Client {
 }
 
 func ConnInfluxParam(addr string,user string,password string) client.Client {
-	// 从配置文件获取redis的ip以及db
-	myConfig.InitConfig("./config/config.txt")
 	cli, err := client.NewHTTPClient(client.HTTPConfig{
 		Addr:     addr,
 		Username: user,

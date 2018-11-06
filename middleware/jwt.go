@@ -18,6 +18,7 @@ func JWTAuth() gin.HandlerFunc {
 				"msg":"请求未携带token，无权限访问",
 			})
 			c.Set("isPass", false)
+			c.Abort()
 			return
 		}
 
@@ -33,6 +34,7 @@ func JWTAuth() gin.HandlerFunc {
 					"msg":"授权已过期",
 				})
 				c.Set("isPass", false)
+				c.Abort()
 				return
 			}
 			c.JSON(http.StatusOK, gin.H{
@@ -40,6 +42,7 @@ func JWTAuth() gin.HandlerFunc {
 				"msg": err.Error(),
 			})
 			c.Set("isPass", false)
+			c.Abort()
 			return
 		}
 		c.Set("isPass", true)
@@ -121,7 +124,7 @@ func (j *JWT) RefreshToken(tokenString string) (string, error) {
 	}
 	if claims, ok := token.Claims.(*CustomClaims); ok && token.Valid {
 		jwt.TimeFunc = time.Now
-		claims.StandardClaims.ExpiresAt = time.Now().Add(1 * time.Hour).Unix()
+		claims.StandardClaims.ExpiresAt = time.Now().Add(48 * time.Hour).Unix()
 		return j.CreateToken(*claims)
 	}
 	return "", TokenInvalid

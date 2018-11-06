@@ -24,7 +24,7 @@ func init() {
 func init_Xml() {
 	var env = myConfig.Read("global", "env")
 	connectionstring := myConfig.Read(env, "xmlconn")
-	maxidleconns := 5
+	maxidleconns := 10
 	maxopenconns :=100
 	db_conn, err := xorm.NewEngine("mysql", connectionstring)
 	if err != nil {
@@ -45,7 +45,7 @@ func init_Xml() {
 func init_Auth() {
 	var env = myConfig.Read("global", "env")
 	connectionstring := myConfig.Read(env, "authconn")
-	maxidleconns := 5
+	maxidleconns := 10
 	maxopenconns :=100
 	db_conn, err := xorm.NewEngine("mysql", connectionstring)
 	if err != nil {
