@@ -21,7 +21,7 @@ import (
 var (
 	myConfig  = new(core.Config)
     MParms []xml.Motorparams
-
+	timeLayout = "2006-01-02 15:04:05"
 	)
 func init() {
 	myConfig.InitConfig("./config/config.txt")
@@ -29,7 +29,9 @@ func init() {
 	redis.Redis.Init(5)
 }
 func main() {
-	defer db.SqlDB.Close()
+	//defer db.SqlDB.Close()
+	defer db.Xml.DB().Close()
+	defer  db.Auth.DB().Close()
 	//1.数据解析- 单独协程
 	//频繁使用的集合数据
 	var err error
@@ -41,19 +43,20 @@ func main() {
 		if err!=nil || len(mqs)==0{
 			core.Logger.Panicln("获取队列列表出错:%s",err)
 		}
-	for   _,q :=range  mqs {
-	//go func(mq *xml.Messagequeue) {
-	//var remains =0
-	//if q.Id>2{
-	//	continue
-	//}
-	 go rabbitmq.Read2(DataParse, q.Username, q.Pwd, q.Host+":"+strconv.Itoa(q.Port), q.Routekey, 0,q.Id)
-	 time.Sleep(3*time.Second)
-	//}(&q)
-	}
+		//var wg sync.WaitGroup
+		for   _,q :=range  mqs {
+			//wg.Add(1)
+			//go func() {
+				//defer wg.Done()
+				go rabbitmq.Read3(DataParse, q.Username, q.Pwd, q.Host+":"+strconv.Itoa(q.Port), q.Routekey,q.Name, 0,q.Id)
+				time.Sleep(1*time.Second)
+				//}()
+		}
+	//	wg.Wait()
 	//阻塞
-	select {}
-}
+		select {}
+	}
+
 
 //数据解析
 func DataParse(bytes []byte,mqid int) (bool){
@@ -61,6 +64,7 @@ func DataParse(bytes []byte,mqid int) (bool){
 		_model     *xml.DataGram
 		_values    []int
 		_time    time.Time
+		_localtime    time.Time
 		_unixTimeStr    string//当日日期
 		_normalPoints []*client.Point
 		//_alarmPoints []*client.Point
@@ -92,17 +96,18 @@ func DataParse(bytes []byte,mqid int) (bool){
 		globalTime = key
 		_values=v
 	}
-	timeLayout := "2006-01-02 15:04:05"
+
 	loc, _ := time.LoadLocation("Local")   //重要：获取时区
 	dataTimeStr := time.Unix(globalTime, 0).Format(timeLayout) //设置时间戳 使用模板格式化为日期字符串
-	theTime, err := time.ParseInLocation(timeLayout, dataTimeStr, loc) //使用模板在对应时区转化为time.time类型
+	_time, err = time.ParseInLocation(timeLayout, dataTimeStr, loc) //使用模板在对应时区转化为time.time类型
+	_localtime=_time.Add(-8*time.Hour)
 	if err!=nil{
 		core.Logger.Panicln("时间转换错误！data : %s ,err：%s",dataTimeStr,err)
 		return false
 	}
 	_model=datagram
-	_time=theTime
-	_unixTimeStr=strconv.FormatInt(time.Date(theTime.Year(), theTime.Month(), theTime.Day(),0, 0, 0, 0, theTime.Location()).Unix(),10)
+	//_time=theTime
+	_unixTimeStr=strconv.FormatInt(time.Date(_localtime.Year(), _localtime.Month(), _localtime.Day(),0, 0, 0, 0, _localtime.Location()).Unix(),10)
 	//todo
 	collectDevice,err:=xml.GetCollectdeviceByIndex(_model.Collectdeviceindex)
 	if err!=nil{
@@ -124,7 +129,7 @@ func DataParse(bytes []byte,mqid int) (bool){
 		core.Logger.Println("该采集设备%s不存在任何产线err：%s",collectDevice.Index,err)
 		//return false
 	}
-	line.Time=globalTime
+	line.Time=_localtime.Unix()//globalTime
 	_,err=xml.UpdateProductionline(line)
 	if err!=nil{
 		core.Logger.Println("更新%s 失败 err：%s",line.Name,err)
@@ -198,13 +203,13 @@ func DataParse(bytes []byte,mqid int) (bool){
 					fields[param]=paramValue
 					ais=append(ais,others.AI{Param:param,Value:paramValue})
 				}
-				var tormorrowTime=_time.Add(24*time.Hour)//明天
+				var tormorrowTime=_localtime.Add(24*time.Hour)//明天
 				expireTime:= time.Date(tormorrowTime.Year(), tormorrowTime.Month(), tormorrowTime.Day(),
 					0, 0, 0, 0, tormorrowTime.Location())//明天凌晨
 				fmt.Println(expireTime.Format("2006-01-02 00:00:00"))
 				//ai分析使用
 				redis.Redis.Select(5)
-				redis.Redis.HSet(id+"|"+_unixTimeStr,_time.Format("2006-01-02 15:04:05"),ais)
+				redis.Redis.HSet(id+"|"+_unixTimeStr,_localtime.Format("2006-01-02 15:04:05"),ais)
 				//var lifeTime=core.GetSecs(_time,endTime)
 				redis.Redis.ExpireAt(id+"|"+_unixTimeStr,expireTime.Unix()) //1 days
 				//入influx库持久化
@@ -226,7 +231,7 @@ func DataParse(bytes []byte,mqid int) (bool){
 						alarmContents=dataformmodel.Remark+"|"
 					}
 				}
-				var alarm=others.Alarm{Content:alarmContents,Time:_time}
+				var alarm=others.Alarm{Content:alarmContents,Time:_localtime}
 				redis.Redis.Select(3)
 				redis.Redis.Lpushs(id+"|"+_unixTimeStr,alarm)
 				redis.Redis.Expire(id+"|"+_unixTimeStr,604800)//7 days
@@ -272,7 +277,7 @@ func DataParse(bytes []byte,mqid int) (bool){
 					//}
 					//_otherDiPoints=append(_otherDiPoints,pt)
 				}
-				var diData=others.DI{ others.DITitle{Params:diParams},others.DICache{Values:diValues,Time:_time}}
+				var diData=others.DI{ others.DITitle{Params:diParams},others.DICache{Values:diValues,Time:_localtime}}
 				redis.Redis.Select(15)
 				exist,err:=redis.Redis.Exists(id)
 				if err!=nil{
@@ -283,7 +288,7 @@ func DataParse(bytes []byte,mqid int) (bool){
 					redis.Redis.Set(id,diParams)//保存di参数
 				}
 				redis.Redis.Select(1)
-				redis.Redis.HSet(id+"|"+_unixTimeStr,_time.Format("2006-01-02 15:04:05"),diData.DICaches.Values)
+				redis.Redis.HSet(id+"|"+_unixTimeStr,_localtime.Format("2006-01-02 15:04:05"),diData.DICaches.Values)
 				redis.Redis.Expire(id+"|"+_unixTimeStr,7776000) //90 days
 			}
 		}
@@ -318,7 +323,7 @@ func DataParse(bytes []byte,mqid int) (bool){
 
 	//存储原始数据
 	xml.InsertOriginalbytes(xml.Originalbytes{Productionlineid:collect.ProductionlineId,Collectdeviceindex:mq.Collectdeviceindex,
-		Time:theTime,Bytes:core.BytesConvertHexArr(bytes)})
+		Time:_localtime,Bytes:core.BytesConvertHexArr(bytes)})
 	return true
 }
 

@@ -177,7 +177,7 @@ func GetBeltCysCurrentDayApi(c *gin.Context){
 					"msg":"获取产量绑定业务参数失败"+err.Error(),
 				})
 			}
-			data[motor.MotorId]=res[bussinesskind.Defaultparam]
+			data[motor.Name]=res[bussinesskind.Defaultparam]
 		}
 	}
 	c.JSON(http.StatusOK, gin.H{
