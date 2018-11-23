@@ -6,6 +6,7 @@ import (
 	"github.com/influxdata/influxdb/client/v2"
 	"fmt"
 	"time"
+	"yuniot/core/extentions"
 )
 //获取时间段内的统计信息
 func GetStatistics(conn client.Client,motor xml.Motor,start string,end string)(map[string]float32,error){
@@ -27,7 +28,7 @@ func GetStatistics(conn client.Client,motor xml.Motor,start string,end string)(m
 			core.Logger.Printf("获取业务信息出错：%s",err)
 			return nil,err
 		}
-		var boottimes =0
+		var  boottimes =0
 		if bussiness.Defaultparam!=""{
 			runningParam=bussiness.Defaultparam
 			boots,err:=CalcBootTimes(conn,motor.ProductionLineId,motor.MotorTypeId,bussiness.Defaultparam,motor.MotorId,
@@ -37,7 +38,8 @@ func GetStatistics(conn client.Client,motor xml.Motor,start string,end string)(m
 				return nil,err
 			}
 			boottimes=boots
-			datamap["boottimes"]=float32(boottimes)}
+			var runningTimes=float32(extensions.Round(float64(boots)/60,2)) //h
+			datamap["boottimes"]=runningTimes}
 		//datamaps=append(datamaps,datamap)
 		//累加：产量,电量
 		bussiness,err=xml.GetBussinesskindByKindAndTypeAndLineId("output",motor.MotorTypeId,motor.ProductionLineId)

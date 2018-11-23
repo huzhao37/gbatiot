@@ -124,7 +124,7 @@ func CalcAccuDiff(conn client.Client,database string,measure string,feildName st
 func CalcAccuDiffNonNeg(conn client.Client,database string,measure string,feildName string,motorid string,
 	start string,end string)(map[string]float32,error){
 	var err error
-	qs,err:= fmt.Sprintf("SELECT Sum(%s) FROM (SELECT NON_NEGATIVE_DIFFERENCE(%s) FROM %s WHERE time >= '%s' AND time <= '%s'  AND motorid = '%s'  AND %s>-1  %s) ",
+	qs,err:= fmt.Sprintf("SELECT Sum(%s) FROM (SELECT NON_NEGATIVE_DIFFERENCE(%s) FROM %s WHERE time >= '%s' AND time <= '%s'  AND motorid = '%s'  ) ",
 		"non_negative_difference",feildName,measure,start,end,motorid) ,nil
 	res,err:=influx.QueryDB(conn,database,qs)
 	if len(res)==0||len(res[0].Series)==0{
@@ -252,7 +252,7 @@ func CalcLoadStall(value float32,capacity float32,bootTimes int)( loadStall floa
 	}, func(e interface{}) {
 		core.Logger.Printf("获取产量负荷出错：%s",e)
 	})
-	return loadStall,err
+	return loadStall*100,err //100%
 }
 
 //计算瞬时负荷--校准值，开机时间，额定值，单位：顿/小时
@@ -262,11 +262,11 @@ func CalcInstantLoadStall(value float32,capacity float32)( loadStall float32,err
 		return loadStall,err
 	}
 	core.Try(func() {
-		loadStall= float32(extensions.Round(float64((value*60)/capacity),3))
+		loadStall= float32(extensions.Round(float64((value)/capacity),3))//value*60
 	}, func(e interface{}) {
 		core.Logger.Printf("获取产量负荷出错：%s",e)
 	})
-	return loadStall,err
+	return loadStall*100,err //100%
 }
 
 

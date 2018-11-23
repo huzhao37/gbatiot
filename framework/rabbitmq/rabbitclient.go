@@ -26,6 +26,11 @@ var (
 	RabbitMq_QueueCount      int
 	_conn                    *amqp.Connection
 	_channel                 *amqp.Channel
+
+	//_wconn                    *amqp.Connection
+	//_wchannel                 *amqp.Channel
+	_werr error
+     err error
 )
 
 func init() {
@@ -44,8 +49,8 @@ func init() {
 }
 func failOnError(err error, msg string) {
 	if err != nil {
-		corex.Logger.Fatalf("[rabbitmq] %s: %s", msg, err)
-		panic(fmt.Sprintf("%s: %s", msg, err))
+		corex.Logger.Panicf("[rabbitmq] %s: %s", msg, err)
+		//panic(fmt.Sprintf("%s: %s", msg, err))
 	}
 }
 //消费者1
@@ -120,16 +125,18 @@ func Read(handler func([]byte)) {
 func Write(body string, queuename string) {
 	url := "amqp://" + RabbitMq_User + ":" + RabbitMq_Pwd + "@" + RabbitMq_Uri + "/" //"amqp://guest:guest@localhost:5672/"
 	if _conn==nil{
-		_conn, err:= amqp.Dial(url)
-		failOnError(err, "Failed to connect to RabbitMQ")
+		_conn, _werr= amqp.Dial(url)
+		failOnError(_werr, "Failed to connect to RabbitMQ")
 		defer _conn.Close()
 	}
+	//defer _conn.Close()
 	if _channel==nil{
-		_channel, err := _conn.Channel()
-		failOnError(err, "Failed to open a channel")
+		_channel, _werr = _conn.Channel()
+		failOnError(_werr, "Failed to open a channel")
 		defer _channel.Close()
 	}
-	q, err := _channel.QueueDeclare(
+	//defer _wchannel.Close()
+	q, _werr := _channel.QueueDeclare(
 		queuename, // name
 		true,      // durable
 		false,     // delete when unused
@@ -137,10 +144,10 @@ func Write(body string, queuename string) {
 		false,     // no-wait
 		nil,       // arguments
 	)
-	failOnError(err, "Failed to declare a queue")
+	failOnError(_werr, "Failed to declare a queue")
 	_channel.QueueBind(queuename,queuename,"amq.topic",false,nil)
-	failOnError(err, "[rabbitmq]Failed to declare a queue")
-	err = _channel.Publish(
+	failOnError(_werr, "[rabbitmq]Failed to declare a queue")
+	_werr = _channel.Publish(
 		"",     // exchange
 		q.Name, // routing key
 		false,  // mandatory
@@ -150,7 +157,7 @@ func Write(body string, queuename string) {
 			ContentType:  "text/plain",
 			Body:         []byte(body),
 		})
-	failOnError(err, "Failed to publish a message")
+	failOnError(_werr, "Failed to publish a message")
 	fmt.Printf(" [x] Sent %s", body)
 }
 
@@ -278,14 +285,16 @@ func Read2(handler func(bytes []byte,mqid int)(bool),user string,pwd string,uri 
 //消费者3
 func Read3(handler func(bytes []byte,mqid int)(bool),user string,pwd string,uri string,key string,queue string,remains int,mqid int) {
 	url := "amqp://" + user + ":" + pwd + "@" + uri + "/" //"amqp://guest:guest@localhost:5672/"
-	var err error
-	_conn, err = amqp.Dial(url)
-	failOnError(err, "[rabbitmq]Failed to connect to RabbitMQ")
-	defer _conn.Close()
-
-	_channel, err = _conn.Channel()
-	failOnError(err, "[rabbitmq]Failed to open a channel")
-	defer _channel.Close()
+	if _conn==nil{
+		_conn, err = amqp.Dial(url)
+		failOnError(err, "[rabbitmq]Failed to connect to RabbitMQ")
+		defer _conn.Close()
+	}
+	if _channel==nil{
+		_channel, err = _conn.Channel()
+		failOnError(err, "[rabbitmq]Failed to open a channel")
+		defer _channel.Close()
+	}
 
 	q, err := _channel.QueueDeclare(
 		queue, // name

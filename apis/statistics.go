@@ -14,7 +14,10 @@ type Status struct {
 	productionlinestatus bool
 	devicesStatus []map[string]bool
 }
-
+var (
+	timeLayout = "2006-01-02 15:04:05"
+	loc, _ = time.LoadLocation("Local")   //重要：获取时区
+)
 //获取当月主皮带累计情况概览
 func GetMainCyCurrentMonthApi(c *gin.Context){
 	isPass := c.GetBool("isPass")
@@ -22,7 +25,7 @@ func GetMainCyCurrentMonthApi(c *gin.Context){
 		return
 	}
 	motor,err:=xml.GetMainCyByProductionlineId(c.Request.FormValue("productionlineid"))
-	if err!=nil {
+	if err!=nil||motor.Id==0 {
 		c.JSON(http.StatusOK,gin.H{
 			"status":0,
 			"msg":"设备不存在"+err.Error(),
@@ -38,8 +41,6 @@ func GetMainCyCurrentMonthApi(c *gin.Context){
 	}
 	conn:=influx.ConnInfluxParam(influxd.Addr,influxd.User,influxd.Pwd)
 	defer conn.Close()
-	timeLayout := "2006-01-02 15:04:05"
-	loc, _ := time.LoadLocation("Local")   //重要：获取时区
 	start:=time.Date(time.Now().Year(),time.Now().Month(),1,0,0,0,0,loc)
 	end:=time.Date(time.Now().Year(),time.Now().Month(),time.Now().Day(),time.Now().Hour(),time.Now().Minute(),0,0,loc)
 	startStr := start.Format(timeLayout) //设置时间戳 使用模板格式化为日期字符串
@@ -64,7 +65,7 @@ func GetMainCyCurrentDayApi(c *gin.Context){
 		return
 	}
 	motor,err:=xml.GetMainCyByProductionlineId(c.Request.FormValue("productionlineid"))
-	if err!=nil {
+	if err!=nil||motor.Id==0 {
 		c.JSON(http.StatusOK,gin.H{
 			"status":0,
 			"msg":"设备不存在"+err.Error(),
@@ -80,8 +81,6 @@ func GetMainCyCurrentDayApi(c *gin.Context){
 	}
 	conn:=influx.ConnInfluxParam(influxd.Addr,influxd.User,influxd.Pwd)
 	defer conn.Close()
-	timeLayout := "2006-01-02 15:04:05"
-	loc, _ := time.LoadLocation("Local")   //重要：获取时区
 	start:=time.Date(time.Now().Year(),time.Now().Month(),time.Now().Day(),0,0,0,0,loc)
 	end:=time.Date(time.Now().Year(),time.Now().Month(),time.Now().Day(),time.Now().Hour(),time.Now().Minute(),0,0,loc)
 	startStr := start.Format(timeLayout) //设置时间戳 使用模板格式化为日期字符串
@@ -106,7 +105,7 @@ func GetMainCyCurrentApi(c *gin.Context){
 		return
 	}
 	motor,err:=xml.GetMainCyByProductionlineId(c.Request.FormValue("productionlineid"))
-	if err!=nil {
+	if err!=nil ||motor.Id==0{
 		c.JSON(http.StatusOK,gin.H{
 			"status":0,
 			"msg":"设备不存在"+err.Error(),
@@ -137,7 +136,7 @@ func GetBeltCysCurrentDayApi(c *gin.Context){
 	}
 	var productionlineid=c.Request.FormValue("productionlineid")
 	influxd,err:=xml.GetInfluxByProductionlineId(productionlineid)
-	if err!=nil{
+	if err!=nil||influxd.Id==0{
 		core.Logger.Println("获取产线 %s 的influxdb ，err：%s",productionlineid,err)
 		c.JSON(http.StatusOK,gin.H{
 			"status":0,
@@ -155,14 +154,18 @@ func GetBeltCysCurrentDayApi(c *gin.Context){
 	}
 	var data=map[string]float32{}
 	if len(motors)>0{
+		start:=time.Date(time.Now().Year(),time.Now().Month(),time.Now().Day(),0,0,0,0,loc)
+		end:=time.Date(time.Now().Year(),time.Now().Month(),time.Now().Day(),time.Now().Hour(),time.Now().Minute(),0,0,loc)
+		startStr := start.Format(timeLayout) //设置时间戳 使用模板格式化为日期字符串
+		endStr := end.Format(timeLayout) //设置时间戳 使用模板格式化为日期字符串
+		if startStr==""||endStr=="newtrekWang"||startStr=="newtrekWang"||endStr==""{
+			c.JSON(http.StatusOK, gin.H{
+				"status":1,
+				"msg": data,
+			})
+		}
 		for i:=0;i<len(motors) ;i++  {
 			var motor=motors[i]
-			timeLayout := "2006-01-02 15:04:05"
-			loc, _ := time.LoadLocation("Local")   //重要：获取时区
-			start:=time.Date(time.Now().Year(),time.Now().Month(),time.Now().Day(),0,0,0,0,loc)
-			end:=time.Date(time.Now().Year(),time.Now().Month(),time.Now().Day(),time.Now().Hour(),time.Now().Minute(),0,0,loc)
-			startStr := start.Format(timeLayout) //设置时间戳 使用模板格式化为日期字符串
-			endStr := end.Format(timeLayout) //设置时间戳 使用模板格式化为日期字符串
 			res, err :=repository.GetStatistics(conn,motor,startStr,endStr)
 			if err != nil {
 				c.JSON(http.StatusOK,gin.H{
@@ -194,7 +197,7 @@ func GetDeviceCurrentApi(c *gin.Context){
 		return
 	}
 	motor,err:=xml.GetMotorByMotorId(c.Request.FormValue("motorid"))
-	if err!=nil {
+	if err!=nil ||motor.Id==0{
 		c.JSON(http.StatusOK,gin.H{
 			"status":0,
 			"msg":"获取设备信息"+err.Error(),
@@ -225,7 +228,7 @@ func GetStatusApi(c *gin.Context){
 	}
 	var lineid=c.Request.FormValue("productionlineid")
 	influxd,err:=xml.GetInfluxByProductionlineId(lineid)
-	if err!=nil{
+	if err!=nil||influxd.Id==0{
 		core.Logger.Println("获取产线 %s 的influxdb ，err：%s",lineid,err)
 		c.JSON(http.StatusOK,gin.H{
 			"status":0,
