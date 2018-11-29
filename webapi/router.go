@@ -43,20 +43,7 @@ func initRouter() *gin.Engine {
 	}
 	return router
 }
-//cors
-func MiddleWare() gin.HandlerFunc {
-	return func(c *gin.Context) {
-			//c.Request.SetBasicAuth("x","x")
-			c.Writer.Header().Set("Access-Control-Allow-Origin", "*")//允许访问所有域
-			c.Writer.Header().Add("Access-Control-Allow-Headers","Content-Type")//header的类型
-			//c.Writer.Header().Set("content-type","application/json") //返回数据格式是json
-			c.Next()
-		//}
-
-	}
-}
 // 处理跨域请求,支持options访问
-
 func Cors() gin.HandlerFunc {
 
 	return func(c *gin.Context) {

@@ -1,11 +1,11 @@
 [global]
 env=test
 [test]
-redis.host=47.97.5.85:26125
+redis.host=127.0.0.0:26125
 redis.db=1
 redis.maxidle=1
 redis.maxactive=10
-redis.auth=Unitoon2019:Unitoon2019
+redis.auth=******:******
 
 rabbitmq.host=
 rabbitmq.user=
@@ -17,19 +17,19 @@ rabbitmq.control=CONTROL
 rabbitmq.controlbk=
 rabbitmq.controlfailed=CONTROLFailed
 
-influx.addr=http://10.1.5.170:8086
+influx.addr=http://127.0.0.0:8086
 influx.user=root
-influx.pwd=Unitoon2018
+influx.pwd=******
 
-xmlconn=yunt:Unitoon_2018@(10.1.5.170:63306)/yunt_xml?charset=utf8&loc=Local
-authconn=yunt:Unitoon_2018@(10.1.5.170:63306)/yunt_auth?charset=utf8&loc=Local
+xmlconn=zh:******@(127.0.0.0:63306)/zh_xml?charset=utf8&loc=Local
+authconn=zh:******@(127.0.0.0:63306)/zh_auth?charset=utf8&loc=Local
 
 [prod]
-redis.host=10.81.176.44:26125
+redis.host=127.0.0.1:26125
 redis.db=1
 redis.maxidle=1
 redis.maxactive=10
-redis.auth=Unitoon2019:Unitoon2019
+redis.auth=******:******
 
 rabbitmq.host=
 rabbitmq.user=
@@ -41,9 +41,9 @@ rabbitmq.control=CONTROL
 rabbitmq.controlbk=
 rabbitmq.controlfailed=CONTROLFailed
 
-influx.addr=http://192.168.6.250:8086
+influx.addr=http://127.0.0.1:8086
 influx.user=root
-influx.pwd=Unitoon2018
+influx.pwd=******
 
-xmlconn=yunt:Unitoon_2018@(192.168.6.250:3306)/yunt_xml?charset=utf8&loc=Local
-authconn=yunt:Unitoon_2018@(192.168.6.250:3306)/yunt_auth?charset=utf8&loc=Local
+xmlconn=zh:******@(127.0.0.1:3306)/zh_xml?charset=utf8&loc=Local
+authconn=zh:******@(127.0.0.1:3306)/zh_auth?charset=utf8&loc=Local
