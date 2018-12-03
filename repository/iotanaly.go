@@ -124,8 +124,8 @@ func CalcAccuDiff(conn client.Client,database string,measure string,feildName st
 func CalcAccuDiffNonNeg(conn client.Client,database string,measure string,feildName string,motorid string,
 	start string,end string)(map[string]float32,error){
 	var err error
-	qs,err:= fmt.Sprintf("SELECT Sum(%s) FROM (SELECT NON_NEGATIVE_DIFFERENCE(%s) FROM %s WHERE time >= '%s' AND time <= '%s'  AND motorid = '%s'  ) ",
-		"non_negative_difference",feildName,measure,start,end,motorid) ,nil
+	qs,err:= fmt.Sprintf("SELECT Sum(%s) FROM (SELECT NON_NEGATIVE_DIFFERENCE(%s) FROM %s WHERE time >= '%s' AND time <= '%s'  AND motorid = '%s'  ) where %s <200.0  ",
+		"non_negative_difference",feildName,measure,start,end,motorid,"non_negative_difference") ,nil
 	res,err:=influx.QueryDB(conn,database,qs)
 	if len(res)==0||len(res[0].Series)==0{
 		return nil,nil
